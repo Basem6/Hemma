@@ -1,4 +1,5 @@
 const dns = require('dns');
+const cors =require('cors');
 dns.setServers(['8.8.8.8', '1.1.1.1']);
 const express = require("express");
 const dotenv = require("dotenv");
@@ -6,12 +7,17 @@ const connectDB = require("./config/db");
 const User= require("./models/User");
 const bcrypt = require("bcrypt");
 
+
 dotenv.config();
 
 connectDB();
 
 const app = express();
 app.use(express.json());
+app.use(cors({
+    origin: 'http://localhost:3000',
+    credentials: true
+}));
 app.get("/",(req , res)=>{
     res.send("hello basem")
 })
