@@ -6,6 +6,7 @@ const dotenv = require("dotenv");
 const connectDB = require("./config/db");
 const User= require("./models/User");
 const bcrypt = require("bcrypt");
+const axios =require("axios");
 
 
 dotenv.config();
@@ -69,6 +70,7 @@ try {
 }
 });
 
+
 app.post("/login", async (req, res) => {
 try {
     const { email, password } = req.body;
@@ -105,6 +107,52 @@ try {
 } catch (error) {
     console.error(error);
     res.status(500).json({ message: "حدث خطأ في السيرفر" });
+}
+});
+
+app.get("/callback", async (req, res) => {
+const { code } = req.query;
+
+console.log("Google Code:", code);
+try {
+    // تحويل code إلى access token
+    const response = await axios.post(
+    "https://oauth2.googleapis.com/token",
+    {
+        code,
+        client_id: process.env.GOOGLE_CLIENT_ID,
+        client_secret: process.env.GOOGLE_CLIENT_SECRET,
+        redirect_uri: "http://localhost:5000/callback",
+        grant_type: "authorization_code",
+    },
+    {
+        headers: {
+        "Content-Type": "application/json",
+        },
+    }
+    );
+
+    const { access_token } = response.data;
+
+    console.log("Access Token:", access_token);
+
+
+    // جلب بيانات المستخدم
+    const userResponse = await axios.get(
+    "https://www.googleapis.com/oauth2/v2/userinfo",
+    {
+        headers: {
+        Authorization: `Bearer ${access_token}`,
+        },
+    }
+    );
+
+    console.log(userResponse.data);
+    res.redirect("http://localhost:3000/callback");
+
+} catch (error) {
+    console.log(error.response?.data || error.message);
+    res.status(500).send("Google Auth Error");
 }
 });
 
